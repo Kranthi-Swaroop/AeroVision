@@ -1,0 +1,9 @@
+fastapi>=0.115
+uvicorn[standard]>=0.30
+pydantic>=2.7
+numpy>=1.26
+opencv-python-headless>=4.9
+shapely>=2.0
+python-multipart>=0.0.9
+# install torch first, matched to your CUDA version, from pytorch.org
+ultralytics>=8.2

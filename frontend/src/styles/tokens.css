@@ -1,0 +1,418 @@
+/* AeroVision design tokens.
+ *
+ * Palette follows aeronautical sectional chart conventions rather than generic
+ * dashboard styling: magenta marks detections the way it marks controlled
+ * airspace on a sectional, chart-blue carries the aircraft and its track, and
+ * amber is reserved strictly for degraded states. The base is a blue-leaning
+ * slate rather than black so the video feed reads as a panel on an instrument
+ * console instead of floating in a void.
+ *
+ * Type has three roles, each earned: condensed for instrument labels that must
+ * fit tight columns, mono with tabular figures for coordinates and telemetry
+ * that must not jitter as digits change, and a neutral sans for prose.
+ */
+
+:root {
+  /* surfaces */
+  --bg: #10151a;
+  --panel: #171e25;
+  --panel-raised: #1e272f;
+  --hairline: #2a343d;
+  --hairline-strong: #3a4752;
+
+  /* ink */
+  --ink: #e6ecf1;
+  --ink-dim: #93a3b0;
+  --ink-faint: #61717e;
+
+  /* signal colours */
+  --detect: #e8368f;        /* sectional magenta: detections, victims */
+  --detect-dim: #8c2258;
+  --track: #4a9fd8;         /* chart blue: drone, flight path */
+  --track-dim: #2a5c7d;
+  --caution: #e8a33d;       /* degraded state only, never decoration */
+  --ok: #3fbf8f;
+
+  /* type */
+  --font-label: "Barlow Semi Condensed", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", system-ui, sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, monospace;
+
+  --radius: 3px;   /* instrument panels have tight corners, not soft cards */
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Instrument label: the small caps-tracked text above every readout. */
+.label {
+  font-family: var(--font-label);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+/* Telemetry numbers. Tabular figures stop the layout twitching as digits
+ * change, which at 10 Hz is otherwise very visible and very cheap to fix. */
+.readout {
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+  font-size: 15px;
+  color: var(--ink);
+}
+
+.readout--sm {
+  font-size: 12.5px;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+}
+
+.panel__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--hairline);
+}
+
+/* ---------- application shell ---------- */
+
+.shell {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  height: 100%;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 0 16px;
+  height: 52px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--hairline);
+}
+
+.wordmark {
+  font-family: var(--font-label);
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.wordmark span {
+  color: var(--detect);
+}
+
+.topbar__spacer {
+  flex: 1;
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 62%) minmax(420px, 1fr);
+  gap: 10px;
+  padding: 10px;
+  min-height: 0;
+  align-items: start;
+}
+
+.workspace__main {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  height: 100%;
+}
+
+.workspace__viewport {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.workspace__telemetry {
+  flex: 0 0 auto;
+}
+
+.workspace__telemetry > .panel .grid {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.workspace__side {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  overflow: hidden;
+  height: 100%;
+}
+
+.workspace__visual-panel {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.workspace__visual-panel > :last-child {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+@media (max-width: 1100px) {
+  .workspace { grid-template-columns: minmax(0, 1fr) 360px; }
+  .workspace__telemetry > .panel .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+/* ---------- status pill ---------- */
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-label);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+.status__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ink-faint);
+}
+
+.status--live .status__dot {
+  background: var(--ok);
+  box-shadow: 0 0 0 3px rgb(63 191 143 / 0.18);
+}
+
+.status--down .status__dot {
+  background: var(--caution);
+}
+
+/* ---------- controls ---------- */
+
+.btn {
+  font-family: var(--font-label);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: var(--panel-raised);
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--radius);
+  padding: 7px 14px;
+  cursor: pointer;
+}
+
+.btn:hover:not(:disabled) {
+  border-color: var(--track);
+  color: #fff;
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--track);
+  outline-offset: 2px;
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn--go {
+  background: var(--detect-dim);
+  border-color: var(--detect);
+}
+
+.btn--go:hover:not(:disabled) {
+  background: var(--detect);
+  border-color: var(--detect);
+}
+
+/* ---------- map ---------- */
+
+.map {
+  height: 100%;
+  min-height: 420px;
+  border-radius: var(--radius);
+  background: var(--panel);
+  border: 1px solid var(--hairline);
+}
+
+.leaflet-container {
+  background: #0c1116;
+  font-family: var(--font-body);
+  border-radius: var(--radius);
+}
+
+/* Leaflet's default attribution is near-black on our dark map. */
+.leaflet-control-attribution {
+  background: rgb(16 21 26 / 0.82) !important;
+  color: var(--ink-faint) !important;
+  font-size: 10px !important;
+}
+
+.leaflet-control-attribution a {
+  color: var(--ink-dim) !important;
+}
+
+.drone-icon {
+  display: grid;
+  place-items: center;
+}
+
+/* ---------- readout grid ---------- */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1px;
+  background: var(--hairline);
+}
+
+.grid > div {
+  background: var(--panel);
+  padding: 9px 12px;
+}
+
+.cell__value {
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+  font-size: 16px;
+  margin-top: 2px;
+}
+
+.cell__value small {
+  font-size: 11px;
+  color: var(--ink-faint);
+  margin-left: 3px;
+}
+
+/* ---------- battery ---------- */
+
+.meter {
+  height: 4px;
+  background: var(--hairline);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 7px;
+}
+
+.meter__fill {
+  height: 100%;
+  background: var(--ok);
+  transition: width 0.3s linear;
+}
+
+.meter__fill--low {
+  background: var(--caution);
+}
+
+.empty {
+  padding: 22px 14px;
+  color: var(--ink-faint);
+  font-size: 13px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* ---------- view toggle ---------- */
+
+.view-toggle {
+  display: flex;
+  background: var(--bg);
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--radius);
+  overflow: hidden;
+  gap: 0;
+}
+
+.view-toggle__btn {
+  font-family: var(--font-label);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  background: transparent;
+  border: none;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.view-toggle__btn:hover {
+  color: var(--ink);
+}
+
+.view-toggle__btn--active {
+  background: var(--track);
+  color: #fff;
+}
+
+/* ---------- victim list rows ---------- */
+
+.victim-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.victim-row:last-child {
+  border-bottom: none;
+}
+
+.victim-row__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ---------- scene-viewer canvas wrapper ---------- */
+
+.scene-viewer {
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: #0d1b2a;
+  border: 1px solid var(--hairline);
+}

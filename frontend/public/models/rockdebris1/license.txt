@@ -1,0 +1,11 @@
+Model Information:
+* title:	Debris_mid
+* source:	https://sketchfab.com/3d-models/debris-mid-fb11add4f2e54831957c282a1d339301
+* author:	Nol22 (https://sketchfab.com/manoloescobedo22)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Debris_mid" (https://sketchfab.com/3d-models/debris-mid-fb11add4f2e54831957c282a1d339301) by Nol22 (https://sketchfab.com/manoloescobedo22) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

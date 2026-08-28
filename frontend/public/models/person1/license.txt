@@ -1,0 +1,11 @@
+Model Information:
+* title:	Standing Man
+* source:	https://sketchfab.com/3d-models/standing-man-8401da7cb2564fc08681836cbeff39bc
+* author:	zhuoyi0904 (https://sketchfab.com/zhuoyi0904)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Standing Man" (https://sketchfab.com/3d-models/standing-man-8401da7cb2564fc08681836cbeff39bc) by zhuoyi0904 (https://sketchfab.com/zhuoyi0904) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
