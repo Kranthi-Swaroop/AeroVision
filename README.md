@@ -5,6 +5,10 @@ a textured Three.js environment, an interactive drone, real YOLO person
 detection, autonomous coverage scanning, dummy-GPS geolocation, and safe rescue
 route planning.
 
+Detailed SIH architecture, algorithms, specifications, rationale, testing, and
+demo guidance are available in
+[docs/SIH_PROJECT_DOCUMENTATION.md](docs/SIH_PROJECT_DOCUMENTATION.md).
+
 ## Repository structure
 
 ```text

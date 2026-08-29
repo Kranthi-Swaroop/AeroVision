@@ -31,11 +31,14 @@ class Settings:
     sidelap: float = _f("SIDELAP", 0.40)
 
     # detection
-    model: str = os.environ.get("AV_MODEL", "yolov8n.pt")
-    # CPU is the portable default; set AV_DEVICE=cuda:0 on a CUDA host.
-    device: str = os.environ.get("AV_DEVICE", "cpu")
-    conf_threshold: float = _f("CONF", 0.35)
-    imgsz: int = _i("IMGSZ", 960)
+    # The small model is still light enough for a 6 GB RTX 3050, while being
+    # materially better on tiny people than the previous nano model.
+    model: str = os.environ.get("AV_MODEL", "yolov8s.pt")
+    device: str = os.environ.get("AV_DEVICE", "auto")
+    # A stricter threshold suppresses debris proposals. Full-frame 1280px
+    # inference retains small-person detail without tile-induced false positives.
+    conf_threshold: float = _f("CONF", 0.60)
+    imgsz: int = _i("IMGSZ", 1280)
     detect_hz: float = _f("DETECT_HZ", 8.0)          # GPU ceiling, not the trigger
     forward_overlap: float = _f("FWD_OVERLAP", 0.80)  # sets the capture interval
 

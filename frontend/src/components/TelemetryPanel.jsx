@@ -1,8 +1,11 @@
 const STATE_LABEL = {
   idle: "Standing by",
   scanning: "Scanning",
+  confirming: "Confirming detection",
   rtl: "Returning to launch",
   landed: "Landed",
+  complete: "Mission complete",
+  manual: "Manual flight",
 };
 
 function Cell({ label, value, unit }) {
@@ -17,54 +20,31 @@ function Cell({ label, value, unit }) {
   );
 }
 
-export default function TelemetryPanel({ telemetry }) {
-  if (!telemetry) {
-    return (
-      <section className="panel">
-        <div className="panel__head">
-          <span className="label">Aircraft</span>
-        </div>
-        <p className="empty">No telemetry. Start a scan to arm the drone.</p>
-      </section>
-    );
-  }
-
-  const pct = Math.round(telemetry.battery * 100);
-  const low = telemetry.battery <= 0.25;
+export default function TelemetryPanel({ telemetry, surveyStats }) {
+  const status = surveyStats?.status ?? telemetry?.state ?? "idle";
+  const area = surveyStats?.areaM2;
+  const coverage = surveyStats?.coveragePct ?? 0;
+  const altitude = surveyStats?.droneAltitude ?? telemetry?.alt ?? 0;
 
   return (
     <section className="panel">
       <div className="panel__head">
         <span className="label">Aircraft</span>
         <span className="label" style={{ color: "var(--ink-dim)" }}>
-          {STATE_LABEL[telemetry.state] ?? telemetry.state}
+          {STATE_LABEL[status] ?? status}
         </span>
       </div>
 
       <div className="grid">
-        <Cell label="Latitude" value={telemetry.lat.toFixed(6)} unit="°N" />
-        <Cell label="Longitude" value={telemetry.lon.toFixed(6)} unit="°E" />
-        <Cell label="Altitude" value={telemetry.alt.toFixed(0)} unit="m AGL" />
-        <Cell label="Heading" value={telemetry.heading.toFixed(0)} unit="°" />
-        <Cell label="Distance flown" value={telemetry.distance_m.toFixed(0)} unit="m" />
-        <Cell
-          label="Waypoint"
-          value={`${telemetry.waypoint_index}/${telemetry.waypoint_total}`}
-        />
+        <Cell label="Search zone area" value={area == null ? "--" : Math.round(area).toLocaleString()} unit={area == null ? "" : "m²"} />
+        <Cell label="Coverage progress" value={coverage.toFixed(1)} unit="%" />
+        <Cell label="People detected" value={surveyStats?.peopleDetected ?? 0} />
+        <Cell label="Drone altitude" value={altitude.toFixed(1)} unit="m AGL" />
       </div>
 
-      <div style={{ padding: "10px 12px", borderTop: "1px solid var(--hairline)" }}>
-        <div style={{ display: "flex", justifyContent: "space-between" }}>
-          <span className="label">Battery</span>
-          <span className="readout readout--sm">
-            {pct}% · {Math.round(telemetry.eta_s)}s to reserve
-          </span>
-        </div>
+      <div style={{ padding: "7px 12px", borderTop: "1px solid var(--hairline)" }}>
         <div className="meter">
-          <div
-            className={`meter__fill${low ? " meter__fill--low" : ""}`}
-            style={{ width: `${pct}%` }}
-          />
+          <div className="meter__fill" style={{ width: `${Math.max(0, Math.min(100, coverage))}%` }} />
         </div>
       </div>
     </section>

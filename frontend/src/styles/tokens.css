@@ -132,6 +132,52 @@ body {
   flex: 1;
 }
 
+.survey-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.survey-controls__field {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-label);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  color: var(--ink-dim);
+}
+
+.survey-controls__field input {
+  width: 50px;
+  height: 29px;
+  padding: 3px 5px;
+  border: 1px solid var(--hairline-strong);
+  border-radius: 2px;
+  color: var(--ink);
+  background: var(--bg);
+  font-family: var(--font-data);
+}
+
+.survey-controls__field small {
+  color: var(--ink-faint);
+  font-size: 9px;
+}
+
+.survey-controls__status {
+  min-width: 62px;
+  color: var(--track);
+  font-size: 10px;
+}
+
+.btn--active {
+  border-color: var(--track);
+  color: var(--ink);
+  background: var(--track-dim);
+}
+
 .workspace {
   display: grid;
   grid-template-columns: minmax(0, 62%) minmax(420px, 1fr);
@@ -160,7 +206,7 @@ body {
 }
 
 .workspace__telemetry > .panel .grid {
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .workspace__side {

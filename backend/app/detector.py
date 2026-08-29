@@ -20,15 +20,18 @@ PERSON_CLASS = 0
 
 
 class PersonDetector:
-    def __init__(self, model_path="yolov8n.pt", device="cuda:0",
-                 conf=0.35, imgsz=960):
+    def __init__(self, model_path="yolov8s.pt", device="auto",
+                 conf=0.60, imgsz=1280):
         # Keep Ultralytics runtime settings inside the project. This avoids a
         # hidden dependency on a writable user profile on managed machines.
         config_dir = Path(__file__).resolve().parents[1] / ".ultralytics"
         config_dir.mkdir(parents=True, exist_ok=True)
         os.environ.setdefault("YOLO_CONFIG_DIR", str(config_dir))
-        from ultralytics import YOLO  # imported lazily so the module loads without torch
+        import torch
+        from ultralytics import YOLO
 
+        if device == "auto":
+            device = "cuda:0" if torch.cuda.is_available() else "cpu"
         self.model = YOLO(model_path)
         self.device = device
         self.conf = conf
@@ -49,8 +52,12 @@ class PersonDetector:
     def _infer(self, frame: np.ndarray):
         t0 = time.perf_counter()
         res = self.model.predict(
-            frame, imgsz=self.imgsz, conf=self.conf, classes=[PERSON_CLASS],
-            device=self.device, verbose=False,
+            frame,
+            imgsz=self.imgsz,
+            conf=self.conf,
+            classes=[PERSON_CLASS],
+            device=self.device,
+            verbose=False,
         )[0]
         dt = (time.perf_counter() - t0) * 1000.0
 

@@ -31,7 +31,7 @@ import {
 import * as THREE from "three";
 import { clone as cloneSkeleton } from "three/addons/utils/SkeletonUtils.js";
 import { planRescueRoutes } from "../lib/rescuePlanner";
-import { registerSurveyDetection, startSurveyMission, surveyMission } from "../lib/surveyMission";
+import { markSurveyCoverage, registerSurveyDetection, surveyMission } from "../lib/surveyMission";
 
 // ── paths served from /public/models/ ────────────────────────────────────────
 const FLOOD_GLTF = "/models/flood/309aca03bca744a49509cfb4069981bc.gltf";
@@ -743,6 +743,9 @@ function DroneMarker({ position = [0, 10, 0], heading = 0 }) {
     liveDronePose.z = drone.position.z;
     liveDronePose.yaw = drone.rotation.y;
     liveDronePose.launched = launchedRef.current;
+    surveyMission.droneAltitude = Math.max(0, drone.position.y - DRONE_PARKED_Y);
+    surveyMission.manualActive = launchedRef.current && !["scanning", "confirming", "rtl"].includes(surveyMission.status);
+    if (launchedRef.current) markSurveyCoverage(drone.position.x, drone.position.z);
   });
 
   return (
@@ -865,26 +868,22 @@ function OnboardCamera() {
 
   useFrame(() => {
     const pose = liveDronePose;
-    if (["scanning", "confirming", "rtl"].includes(surveyMission.status)) {
-      camera.position.set(pose.x, pose.y - 0.2, pose.z);
-      camera.up.set(-Math.sin(pose.yaw), 0, -Math.cos(pose.yaw));
-      camera.lookAt(pose.x, pose.y - 35, pose.z);
-      return;
-    }
-    // Match the aircraft's actual camera/nose direction (local -Z).
+    // Dedicated search mount: an oblique downward view preserves human body
+    // appearance while covering useful ground at 20-60 m altitude. It is used
+    // for both autonomous and manual flight so both modes share detection.
     const forwardX = -Math.sin(pose.yaw);
     const forwardZ = -Math.cos(pose.yaw);
 
     camera.position.set(
-      pose.x + forwardX * 1.25,
-      pose.y - 0.15,
-      pose.z + forwardZ * 1.25,
+      pose.x + forwardX * 0.9,
+      pose.y - 0.2,
+      pose.z + forwardZ * 0.9,
     );
     camera.up.set(0, 1, 0);
     camera.lookAt(
-      pose.x + forwardX * 35,
-      pose.y - 7,
-      pose.z + forwardZ * 35,
+      pose.x + forwardX * 14,
+      pose.y - 24,
+      pose.z + forwardZ * 14,
     );
   });
 
@@ -897,10 +896,39 @@ function FpvDetectionCapture({ onDetections }) {
 
   useEffect(() => {
     let cancelled = false;
+    const detectionWidth = 1280;
+    const detectionHeight = 720;
+    const renderTarget = new THREE.WebGLRenderTarget(detectionWidth, detectionHeight, {
+      depthBuffer: true,
+      stencilBuffer: false,
+      minFilter: THREE.LinearFilter,
+      magFilter: THREE.LinearFilter,
+    });
+    const pixels = new Uint8Array(detectionWidth * detectionHeight * 4);
+    const flipped = new Uint8ClampedArray(pixels.length);
+    const encodeCanvas = document.createElement("canvas");
+    encodeCanvas.width = detectionWidth;
+    encodeCanvas.height = detectionHeight;
+    const encodeContext = encodeCanvas.getContext("2d", { alpha: false });
+    const rowBytes = detectionWidth * 4;
+
     const capture = () => {
       if (cancelled || busyRef.current) return;
       busyRef.current = true;
-      gl.domElement.toBlob(async (blob) => {
+      // Render a separate high-resolution sensor frame. This never resizes or
+      // stalls the visible FPV canvas; only the detector consumes this image.
+      const previousTarget = gl.getRenderTarget();
+      gl.setRenderTarget(renderTarget);
+      gl.clear();
+      gl.render(scene, camera);
+      gl.readRenderTargetPixels(renderTarget, 0, 0, detectionWidth, detectionHeight, pixels);
+      gl.setRenderTarget(previousTarget);
+      for (let row = 0; row < detectionHeight; row += 1) {
+        const source = (detectionHeight - 1 - row) * rowBytes;
+        flipped.set(pixels.subarray(source, source + rowBytes), row * rowBytes);
+      }
+      encodeContext.putImageData(new ImageData(flipped, detectionWidth, detectionHeight), 0, 0);
+      encodeCanvas.toBlob(async (blob) => {
         if (!blob || cancelled) {
           busyRef.current = false;
           return;
@@ -912,10 +940,11 @@ function FpvDetectionCapture({ onDetections }) {
           if (!response.ok) throw new Error(`detector returned ${response.status}`);
           const result = await response.json();
           onDetections?.({ boxes: result.people ?? [], frame: result.frame });
-          const strongest = (result.people ?? []).filter((box) => box.conf >= 0.5).sort((a, b) => b.conf - a.conf)[0];
-          if (strongest && result.frame) {
-            const px = (strongest.x1 + strongest.x2) / 2;
-            const py = (strongest.y1 + strongest.y2) / 2;
+          const candidates = (result.people ?? []).filter((box) => box.conf >= 0.50);
+          if (candidates.length && result.frame) {
+            for (const candidate of candidates) {
+            const px = (candidate.x1 + candidate.x2) / 2;
+            const py = (candidate.y1 + candidate.y2) / 2;
             const point = new THREE.Vector3((px / result.frame.width) * 2 - 1, 1 - (py / result.frame.height) * 2, 0.5).unproject(camera);
             const ray = new THREE.Raycaster(camera.position, point.sub(camera.position).normalize());
             const hits = ray.intersectObjects(scene.children, true);
@@ -935,20 +964,24 @@ function FpvDetectionCapture({ onDetections }) {
               const pose = livePersonPoses.get(personId);
               if (pose) world = new THREE.Vector3(pose.x, pose.y, pose.z);
             }
-            if (world) registerSurveyDetection({ x: world.x, y: world.y, z: world.z, confidence: strongest.conf });
+            if (world) registerSurveyDetection({ x: world.x, y: world.y, z: world.z, confidence: candidate.conf });
+            }
           }
         } catch (error) {
           console.debug("FPV detector unavailable", error);
         } finally {
           busyRef.current = false;
         }
-      }, "image/jpeg", 0.88);
+      }, "image/jpeg", 0.92);
     };
 
-    const timer = window.setInterval(capture, 750);
+    // Busy guard prevents overlap; 150 ms targets ~6 FPS detection while the
+    // visible WebGL feed continues at its normal animation-frame rate.
+    const timer = window.setInterval(capture, 150);
     return () => {
       cancelled = true;
       window.clearInterval(timer);
+      renderTarget.dispose();
     };
   }, [camera, gl, onDetections, scene]);
 
@@ -1134,20 +1167,19 @@ export default function SceneViewer({
   victims = [],
   telemetry = null,
   className = "",
+  surveyArea = null,
+  surveyDrawing = false,
+  onSurveyAreaChange,
+  onSurveyDrawingChange,
 }) {
   const [cameraRequest, setCameraRequest] = useState({ name: "reset", id: 0 });
   const [selectedPersonId, setSelectedPersonId] = useState(null);
   const [selectedObstacleId, setSelectedObstacleId] = useState(null);
-  const [surveyArea, setSurveyArea] = useState(null);
-  const [surveyDrawing, setSurveyDrawing] = useState(false);
-  const [surveyAltitude, setSurveyAltitude] = useState(15);
-  const [surveySpeed, setSurveySpeed] = useState(4);
-  const [, setSurveyRevision] = useState(0);
-
   useEffect(() => {
-    const timer = window.setInterval(() => setSurveyRevision((value) => value + 1), 500);
-    return () => window.clearInterval(timer);
-  }, []);
+    if (surveyDrawing) {
+      setCameraRequest((current) => ({ name: "top", id: current.id + 1 }));
+    }
+  }, [surveyDrawing]);
 
   const selectPerson = useCallback((id) => {
     activeObstacleControlId = null;
@@ -1181,17 +1213,6 @@ export default function SceneViewer({
 
   const selectCamera = (name) => {
     setCameraRequest((current) => ({ name, id: current.id + 1 }));
-  };
-
-  const beginSurveyDrawing = () => {
-    selectCamera("top");
-    setSurveyDrawing(true);
-  };
-
-  const launchSurvey = () => {
-    if (!surveyArea) return;
-    startSurveyMission(surveyArea, THREE.MathUtils.clamp(Number(surveyAltitude), 3, 60), THREE.MathUtils.clamp(Number(surveySpeed), 0.5, 12));
-    setSurveyDrawing(false);
   };
 
   const personPositions = useMemo(() => {
@@ -1246,8 +1267,8 @@ export default function SceneViewer({
           <SurveyAreaSelector
             enabled={surveyDrawing}
             bounds={surveyArea}
-            onChange={setSurveyArea}
-            onComplete={() => setSurveyDrawing(false)}
+            onChange={onSurveyAreaChange}
+            onComplete={() => onSurveyDrawingChange?.(false)}
           />
           {personPositions.map((p) => (
             <PersonMarker
@@ -1269,23 +1290,6 @@ export default function SceneViewer({
 
         <CameraController request={cameraRequest} enabled={!surveyDrawing} />
       </Canvas>
-
-      <div style={{
-        position: "absolute", left: "50%", top: 12, transform: "translateX(-50%)", zIndex: 6,
-        display: "flex", alignItems: "center", gap: 7, padding: "6px 8px",
-        border: "1px solid rgba(74,159,216,0.6)", borderRadius: 3, background: "rgba(12,18,23,0.92)",
-        fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: "#9ec8e4",
-      }}>
-        <button type="button" onClick={beginSurveyDrawing} style={{ border: "1px solid #4a9fd8", background: surveyDrawing ? "#235f86" : "#182129", color: "#dcecf7", padding: "5px 8px", cursor: "pointer" }}>
-          {surveyDrawing ? "DRAG AREA…" : "DRAW SURVEY AREA"}
-        </button>
-        <label>ALT <input type="number" min="3" max="60" value={surveyAltitude} onChange={(event) => setSurveyAltitude(event.target.value)} style={{ width: 48 }} /> m</label>
-        <label>SPEED <input type="number" min="0.5" max="12" step="0.5" value={surveySpeed} onChange={(event) => setSurveySpeed(event.target.value)} style={{ width: 48 }} /> m/s</label>
-        <button type="button" onClick={launchSurvey} disabled={!surveyArea || ["scanning", "confirming", "rtl"].includes(surveyMission.status)} style={{ border: "1px solid #3fbf8f", background: "#173329", color: "#bcebd8", padding: "5px 8px", cursor: surveyArea ? "pointer" : "not-allowed", opacity: surveyArea ? 1 : 0.5 }}>
-          LAUNCH
-        </button>
-        <span>{surveyMission.status.toUpperCase()} {surveyMission.waypoints.length ? `${Math.min(surveyMission.waypointIndex + 1, surveyMission.waypoints.length)}/${surveyMission.waypoints.length}` : ""}</span>
-      </div>
 
       <div style={{
         position: "absolute",

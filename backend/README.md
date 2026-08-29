@@ -12,7 +12,7 @@ prototype and an overclaim.
 
 | Component | Status |
 |---|---|
-| YOLOv8n person detection | Real model, real inference, measured latency |
+| YOLOv8s full-frame person detection | Real model, real inference, measured latency |
 | Camera projection & georeferencing | Real photogrammetry, exact for flat ground |
 | Coverage planning, A* routing, fusion, triage | Real algorithms |
 | Accuracy metrics | Measured against known ground truth |
@@ -23,7 +23,7 @@ prototype and an overclaim.
 
 ```bash
 python -m venv .venv && source .venv/bin/activate
-pip install torch --index-url https://download.pytorch.org/whl/cu121   # match your CUDA
+pip install torch==2.11.0 torchvision==0.26.0 --index-url https://download.pytorch.org/whl/cu128
 pip install -r requirements.txt
 ```
 
@@ -64,7 +64,9 @@ uvicorn app.main:app --reload --port 8000
 ```
 
 Environment overrides all use an `AV_` prefix: `AV_ALT`, `AV_TILT`,
-`AV_CONF`, `AV_IMGSZ`, `AV_SIDELAP`, `AV_FWD_OVERLAP`, `AV_TIME_SCALE`.
+`AV_CONF`, `AV_IMGSZ`, `AV_DEVICE`,
+`AV_SIDELAP`, `AV_FWD_OVERLAP`, `AV_TIME_SCALE`. `AV_DEVICE=auto` selects
+CUDA when available and falls back to CPU.
 
 ## Tests
 
