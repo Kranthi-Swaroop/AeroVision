@@ -1142,6 +1142,7 @@ export function RescueRouteMap() {
           ))}
           {snapshot.targets.map((target, index) => (
             <g key={target.id} transform={`translate(${target.x + 132} ${target.z - (FLOOD_CENTER_Z - 132)})`}>
+              <title>{`Victim V${target.id}: ${target.latitude?.toFixed(6)}, ${target.longitude?.toFixed(6)}`}</title>
               <circle r="4.2" fill={ROUTE_COLORS[index]} stroke="#fff" strokeWidth="1" />
               <text y="-6" textAnchor="middle" fill="#fff" fontSize="7" fontFamily="monospace">V{target.id}</text>
             </g>
@@ -1155,6 +1156,22 @@ export function RescueRouteMap() {
       <div style={{ position: "absolute", left: 8, top: 7, color: "#8edcff", fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: "0.08em" }}>
         WEIGHTED DIJKSTRA · SAFETY CLEARANCE
       </div>
+      {snapshot.targets.length > 0 && (
+        <div style={{
+          position: "absolute", right: 7, top: 23, padding: "5px 7px",
+          background: "rgba(5, 14, 20, 0.88)", border: "1px solid rgba(92, 151, 177, 0.55)",
+          color: "#d9eef7", fontFamily: "'IBM Plex Mono', monospace", fontSize: 7.5,
+          lineHeight: 1.45, pointerEvents: "none",
+        }}>
+          <div style={{ color: "#77bad5", letterSpacing: "0.08em", marginBottom: 2 }}>VICTIM GPS</div>
+          {snapshot.targets.map((target, index) => (
+            <div key={`gps-${target.id}`} style={{ display: "flex", gap: 5, whiteSpace: "nowrap" }}>
+              <span style={{ color: ROUTE_COLORS[index % ROUTE_COLORS.length] }}>V{target.id}</span>
+              <span>{Number(target.latitude).toFixed(6)}, {Number(target.longitude).toFixed(6)}</span>
+            </div>
+          ))}
+        </div>
+      )}
       <div style={{ position: "absolute", right: 8, bottom: 6, color: "#7895a2", fontFamily: "'IBM Plex Mono', monospace", fontSize: 8 }}>
         GRID 4 m · RAFT = CENTER
       </div>

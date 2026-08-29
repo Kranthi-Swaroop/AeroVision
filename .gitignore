@@ -18,6 +18,7 @@ backend/missions.db
 backend/*.db-shm
 backend/*.db-wal
 *.pt
+backend/.models/
 *.onnx
 
 # Frontend dependencies and builds

@@ -39,6 +39,9 @@ class Settings:
     # inference retains small-person detail without tile-induced false positives.
     conf_threshold: float = _f("CONF", 0.60)
     imgsz: int = _i("IMGSZ", 1280)
+    clip_model: str = os.environ.get("AV_CLIP_MODEL", "ViT-B-32")
+    clip_pretrained: str = os.environ.get("AV_CLIP_PRETRAINED", "laion2b_s34b_b79k")
+    clip_threshold: float = _f("CLIP_CONF", 0.62)
     detect_hz: float = _f("DETECT_HZ", 8.0)          # GPU ceiling, not the trigger
     forward_overlap: float = _f("FWD_OVERLAP", 0.80)  # sets the capture interval
 
