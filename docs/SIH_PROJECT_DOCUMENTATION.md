@@ -34,11 +34,10 @@
 22. [Security, reliability, and failure handling](#22-security-reliability-and-failure-handling)
 23. [Limitations](#23-limitations)
 24. [Roadmap](#24-roadmap)
-25. [SIH demonstration sequence](#25-sih-demonstration-sequence)
-26. [Installation and startup](#26-installation-and-startup)
-27. [API reference](#27-api-reference)
-28. [Expected impact](#28-expected-impact)
-29. [Conclusion](#29-conclusion)
+25. [Installation and startup](#26-installation-and-startup)
+26. [API reference](#27-api-reference)
+27. [Expected impact](#28-expected-impact)
+28. [Conclusion](#29-conclusion)
 
 ---
 
@@ -1306,55 +1305,9 @@ Local storage is specific to one browser profile and origin. It is not a multi-u
 
 ---
 
-## 25. SIH demonstration sequence
+## 25. Installation and startup
 
-### 25.1 Recommended live demo
-
-1. Start the backend and show that YOLO loads on CPU or GPU.
-2. Start the frontend and show the established link.
-3. Introduce the textured flood settlement, raft, drone, people, and debris.
-4. Rotate and pan the main camera to prove that it is a live 3D scene.
-5. Switch to top view.
-6. Click **Draw Survey Area** and drag a region containing at least one person.
-7. Set a moderate altitude and slow speed.
-8. Explain that altitude determines footprint and row spacing.
-9. Click **Launch**.
-10. Show takeoff and alternating scan lines.
-11. Show the real FPV camera and backend YOLO logs.
-12. When the box appears, point out the actual confidence value.
-13. Show the drone hover for confirmation.
-14. Show the victim pin appear on the route map.
-15. Explain that the path is generated from current obstacle positions.
-16. Move an obstacle before a second run and show the route change.
-17. Let the drone finish and return to the raft.
-18. Show backend mission metrics or exports if time permits.
-
-### 25.2 Suggested judge explanation
-
-> We do not script the YOLO box from the known 3D person position. The backend receives only the rendered image. After YOLO returns a real box above our threshold, we use camera geometry and scene ray projection to estimate the simulated location. The rescue path is then recomputed from the current obstacle map.
-
-### 25.3 Key questions to anticipate
-
-**Why Dijkstra and not A*?**  
-For one raft and all victims, one weighted Dijkstra sweep gives costs and predecessor paths to every reachable victim. A* remains better for one selected goal and is retained in the backend.
-
-**Why a lawnmower pattern?**  
-The task is area coverage, not point-to-point travel. Alternating rows provide systematic overlap and fewer wasteful turns.
-
-**Is detection real?**  
-Yes. YOLO receives only JPEG pixels and returns the displayed boxes. The environment and flight are simulated.
-
-**Is GPS real?**  
-No. The interactive 3D mission uses dummy GPS around a configured anchor. The project contains the geometry and hardware ingest interfaces required for future integration.
-
-**Can it work in a real flood?**  
-The architecture is transferable, but real deployment requires calibrated hardware, a supported autopilot, terrain/elevation data, field-trained AI, safety validation, communications, and regulatory approval.
-
----
-
-## 26. Installation and startup
-
-### 26.1 Requirements
+### 25.1 Requirements
 
 Install:
 
@@ -1363,7 +1316,7 @@ Install:
 - npm 10 or newer;
 - Windows PowerShell.
 
-### 26.2 First-time setup
+### 25.2 First-time setup
 
 From the repository root:
 
@@ -1374,7 +1327,7 @@ Set-ExecutionPolicy -Scope Process Bypass
 
 This creates `backend/.venv`, installs Python requirements, and installs frontend packages.
 
-### 26.3 Start backend
+### 25.3 Start backend
 
 Terminal 1:
 
@@ -1382,7 +1335,7 @@ Terminal 1:
 .\scripts\start-backend.ps1
 ```
 
-### 26.4 Start frontend
+### 25.4 Start frontend
 
 Terminal 2:
 
@@ -1396,7 +1349,7 @@ Open:
 http://localhost:5173
 ```
 
-### 26.5 Manual startup
+### 25.5 Manual startup
 
 Backend:
 
@@ -1412,7 +1365,7 @@ cd frontend
 npm run dev
 ```
 
-### 26.6 GPU configuration example
+### 25.6 GPU configuration example
 
 Before starting the backend:
 
@@ -1425,7 +1378,7 @@ CPU remains the portable default.
 
 ---
 
-## 27. API reference
+## 26. API reference
 
 | Method | Endpoint | Purpose |
 |---|---|---|
@@ -1475,7 +1428,7 @@ Example response:
 
 ---
 
-## 28. Expected impact
+## 27. Expected impact
 
 If developed into a validated field system, AeroVision can help emergency teams:
 
@@ -1493,7 +1446,7 @@ The central value is not the drone alone. It is the conversion of aerial imagery
 
 ---
 
-## 29. Conclusion
+## 28. Conclusion
 
 AeroVision demonstrates an end-to-end flood search-and-rescue software pipeline inside a reproducible browser simulation. It combines an interactive 3D environment, autonomous coverage flight, real YOLO person detection, geometric localization, dummy GPS, victim confirmation, and obstacle-aware route generation.
 
